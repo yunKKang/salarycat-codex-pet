@@ -7,8 +7,8 @@ PET_DIR="$HOME/.codex/pets/salary-cat"
 echo "Creating $PET_DIR ..."
 mkdir -p "$PET_DIR"
 
-echo "Copying spritesheet.webp ..."
-cp -f output/spritesheet.webp "$PET_DIR/spritesheet.webp"
+echo "Copying spritesheet.png ..."
+cp -f output/spritesheet.png "$PET_DIR/spritesheet.png"
 
 echo "Copying pet.json ..."
 cp -f output/pet.json "$PET_DIR/pet.json"

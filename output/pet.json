@@ -2,7 +2,7 @@
   "id": "salary-cat",
   "displayName": "SalaryCat 月薪喵",
   "description": "The salary cat from SalaryCat — a kawaii cat that lives on your terminal, powered by Codex.",
-  "spritesheetPath": "spritesheet.webp",
+  "spritesheetPath": "spritesheet.png",
   "frame": {
     "width": 192,
     "height": 208,
@@ -17,9 +17,35 @@
         2,
         3,
         4,
-        5
+        5,
+        6,
+        7,
+        28,
+        29,
+        30,
+        31,
+        37,
+        38,
+        39,
+        70,
+        71,
+        70,
+        39,
+        38,
+        37,
+        31,
+        30,
+        29,
+        28,
+        7,
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
       ],
-      "fps": 8.0,
+      "fps": 12.0,
       "loop": true
     },
     "move_right": {
@@ -94,9 +120,11 @@
         50,
         51,
         52,
-        53
+        53,
+        54,
+        55
       ],
-      "fps": 6.0,
+      "fps": 12.0,
       "loop": true
     },
     "running": {

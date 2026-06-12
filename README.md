@@ -1,125 +1,49 @@
 # codex-salary-cat
 
-SalaryCat (月薪喵) — a custom pet for [OpenAI Codex CLI](https://github.com/openai/codex).
+SalaryCat (月薪喵) pet for OpenAI Codex CLI.
 
-Based on the [SalaryCat](https://github.com/Einswen/SalaryCat) terminal animation, adapted to the Codex TUI pet spritesheet format.
+It is adapted from [SalaryCat](https://github.com/Einswen/SalaryCat) into the Codex TUI pet spritesheet format. This build uses a smoother Windows-friendly idle loop and PNG as the default spritesheet.
 
-## Preview
+## Install
 
-A kawaii cat that sits in your terminal, reacting to your coding sessions with 9 animation states.
-
-## Animation States
-
-| Animation | Trigger | FPS |
-|-----------|---------|-----|
-| idle | Default — cat looking at its phone | 8 |
-| running-right | Moving right | 12 |
-| running-left | Moving left (mirrored) | 12 |
-| waving | Greeting | 10 |
-| jumping | Excitement | 10 |
-| failed | Error / blocked | 8 |
-| waiting | Awaiting input | 6 |
-| running | Active work | 15 |
-| review | Code review / ready | 8 |
-
-## Quick Install
-
-### macOS / Linux
-
-```bash
-# Create pet directory
-mkdir -p ~/.codex/pets/salary-cat/
-
-# Copy files
-cp output/spritesheet.webp ~/.codex/pets/salary-cat/
-cp output/pet.json ~/.codex/pets/salary-cat/
-```
-
-Or run the deploy script:
-
-```bash
-chmod +x deploy.sh
-./deploy.sh
-```
-
-### Windows
+Copy the generated pet files into your Codex pets directory:
 
 ```powershell
-# Create pet directory
-mkdir -p ~/.codex/pets/salary-cat/
-
-# Copy files
-cp output/spritesheet.webp ~/.codex/pets/salary-cat/
+mkdir ~/.codex/pets/salary-cat
+cp output/spritesheet.png ~/.codex/pets/salary-cat/
 cp output/pet.json ~/.codex/pets/salary-cat/
 ```
 
-Or double-click `deploy.bat`.
+Then run `/pets` in Codex and select `SalaryCat 月薪喵`.
 
-### Then in Codex CLI
+On Windows, you can also run:
 
+```powershell
+.\deploy.bat
 ```
-/pets
-```
 
-Select **SalaryCat 月薪喵**.
-
-## Terminal Compatibility
-
-| Terminal | Protocol | Status |
-|----------|----------|--------|
-| Windows Terminal | Sixel | ✅ Supported |
-| iTerm2 (≥ 3.6) | Kitty | ✅ Supported |
-| Kitty | Kitty | ✅ Supported |
-| Ghostty | Kitty | ✅ Supported |
-| WezTerm | Kitty | ✅ Supported |
-| foot | Sixel | ✅ Supported |
-| tmux | — | ❌ Disabled (image corruption) |
-| Zellij | — | ❌ Disabled (pane-locality issues) |
-
-## Build from Source
-
-Requirements: Python 3.8+, [Pillow](https://pypi.org/project/Pillow/)
+## Build
 
 ```bash
 pip install Pillow
 python build_spritesheet.py
 ```
 
-Output goes to `output/`:
+The build writes:
 
-- `spritesheet.webp` — primary spritesheet (329 KB)
-- `spritesheet.png` — PNG fallback (845 KB)
-- `pet.json` — Codex pet manifest
+- `output/spritesheet.png`
+- `output/spritesheet.webp`
+- `output/pet.json`
 
-## Spritesheet Format
+## Notes
 
-Follows the [Codex TUI pet specification](https://github.com/openai/codex/tree/main/codex-rs/tui/src/pets):
-
-| Property | Value |
-|----------|-------|
-| Total size | 1536 × 1872 px |
-| Grid | 8 columns × 9 rows |
-| Frame size | 192 × 208 px |
-| Format | WebP (PNG fallback) |
-| Total frames | 72 |
-
-## Project Structure
-
-```
-codex-pet/
-├── cat.GIF                # Source animation (from SalaryCat)
-├── build_spritesheet.py   # Spritesheet generator
-├── deploy.sh              # macOS / Linux deploy script
-├── deploy.bat             # Windows deploy script
-├── README.md
-└── output/
-    ├── spritesheet.webp   # 1536×1872 WebP
-    ├── spritesheet.png    # 1536×1872 PNG fallback
-    └── pet.json           # Codex pet manifest
-```
+- Frame grid: `8 x 9`
+- Frame size: `192 x 208`
+- Default idle animation: extended ping-pong loop using extra unused cells
+- Windows Terminal uses Sixel; Kitty-compatible terminals use Kitty graphics
 
 ## License
 
-- **This project**: MIT
-- **Original SalaryCat**: [Apache 2.0](https://github.com/Einswen/SalaryCat/blob/main/LICENSE)
-- **Cat art**: From the SalaryCat project
+- This project: MIT
+- Original SalaryCat: Apache 2.0
+- Cat art: from the original SalaryCat project

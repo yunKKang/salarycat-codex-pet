@@ -2,7 +2,7 @@
 """
 Generate a Codex TUI pet spritesheet from SalaryCat's cat.GIF.
 
-Output: spritesheet.webp (1536×1872, 8×9 grid of 192×208 frames)
+Output: spritesheet.png and spritesheet.webp (1536×1872, 8×9 grid of 192×208 frames)
 + pet.json manifest for ~/.codex/pets/salary-cat/
 
 Codex spritesheet spec:
@@ -12,13 +12,13 @@ Codex spritesheet spec:
   - Format: WebP (or PNG as fallback)
 
 Row → animation mapping:
-  Row 0: idle          (6 frames + 2 padding)
+  Row 0: idle          (8 core frames + supplemental cells in unused slots)
   Row 1: running-right (8 frames)
   Row 2: running-left  (8 frames, mirrored)
   Row 3: waving        (4 frames + 4 padding)
   Row 4: jumping       (5 frames + 3 padding)
   Row 5: failed        (8 frames)
-  Row 6: waiting       (6 frames + 2 padding)
+  Row 6: waiting       (8 frames)
   Row 7: running       (8 frames)
   Row 8: review        (6 frames + 2 padding)
 """
@@ -38,6 +38,9 @@ COLS = 8
 ROWS = 9
 SHEET_W = FRAME_W * COLS   # 1536
 SHEET_H = FRAME_H * ROWS   # 1872
+IDLE_CORE_SOURCE_INDICES = [0, 1, 2, 3, 4, 5, 6, 7]
+IDLE_EXTRA_SOURCE_INDICES = [8, 9, 10, 11, 12, 13, 14, 15, 16]
+IDLE_EXTRA_SHEET_SLOTS = [28, 29, 30, 31, 37, 38, 39, 70, 71]
 
 # Source GIF — look in project root or parent directories
 GIF_CANDIDATES = ["cat.GIF", "cat.gif", "CAT.GIF"]
@@ -110,13 +113,37 @@ def build_row(
     return [fit_frame(f, FRAME_W, FRAME_H) for f in selected[:COLS]]
 
 
+def place_cells(sheet: Image.Image, start_slot: int, cells: list[Image.Image]) -> None:
+    """Place consecutive cells into the sheet from an absolute slot index."""
+    for offset, cell in enumerate(cells):
+        slot = start_slot + offset
+        x = (slot % COLS) * FRAME_W
+        y = (slot // COLS) * FRAME_H
+        sheet.alpha_composite(cell, (x, y))
+
+
+def place_cells_at_slots(sheet: Image.Image, slots: list[int], cells: list[Image.Image]) -> None:
+    """Place cells into explicit absolute slot indices."""
+    for slot, cell in zip(slots, cells):
+        x = (slot % COLS) * FRAME_W
+        y = (slot // COLS) * FRAME_H
+        sheet.alpha_composite(cell, (x, y))
+
+
+def ping_pong_frames(frames: list[int]) -> list[int]:
+    """Build a forward-then-backward loop without duplicating the endpoints."""
+    if len(frames) < 2:
+        return frames
+    return frames + frames[-2:0:-1]
+
+
 def build_spritesheet(src_frames: list[Image.Image]) -> Image.Image:
     """Build the full 1536×1872 spritesheet."""
     n = len(src_frames)  # 28
 
     rows_config = [
-        # Row 0: idle — 6 frames from the core reaction cycle
-        {"name": "idle", "indices": [0, 2, 4, 6, 8, 10], "mirror": False},
+        # Row 0: idle — first 8 frames; more idle frames are injected into unused cells later
+        {"name": "idle", "indices": IDLE_CORE_SOURCE_INDICES, "mirror": False},
         # Row 1: running-right — 8 frames
         {"name": "running-right", "indices": [0, 3, 6, 9, 12, 15, 18, 21], "mirror": False},
         # Row 2: running-left — same frames, mirrored
@@ -127,8 +154,8 @@ def build_spritesheet(src_frames: list[Image.Image]) -> Image.Image:
         {"name": "jumping", "indices": [0, 7, 14, 21, 6], "mirror": False},
         # Row 5: failed — 8 frames (looking-down moments)
         {"name": "failed", "indices": [0, 1, 2, 3, 0, 1, 2, 3], "mirror": False},
-        # Row 6: waiting — 6 frames (slow idle drift)
-        {"name": "waiting", "indices": [0, 4, 8, 12, 16, 20], "mirror": False},
+        # Row 6: waiting — 8 frames (smooth idle drift)
+        {"name": "waiting", "indices": [0, 2, 4, 6, 8, 10, 12, 14], "mirror": False},
         # Row 7: running — 8 frames (faster subset)
         {"name": "running", "indices": [1, 4, 7, 10, 13, 16, 19, 22], "mirror": False},
         # Row 8: review — 6 frames (studying phone)
@@ -139,22 +166,24 @@ def build_spritesheet(src_frames: list[Image.Image]) -> Image.Image:
 
     for row_idx, config in enumerate(rows_config):
         cells = build_row(src_frames, config["indices"], config.get("mirror", False))
-        for col_idx, cell in enumerate(cells):
-            x = col_idx * FRAME_W
-            y = row_idx * FRAME_H
-            sheet.alpha_composite(cell, (x, y))
+        place_cells(sheet, row_idx * COLS, cells)
         print(f"  Row {row_idx}: {config['name']:15s} ({len(config['indices'])} source frames)")
+
+    idle_extra_cells = build_row(src_frames, IDLE_EXTRA_SOURCE_INDICES)[:len(IDLE_EXTRA_SHEET_SLOTS)]
+    place_cells_at_slots(sheet, IDLE_EXTRA_SHEET_SLOTS, idle_extra_cells)
+    print(f"  Idle extras:      ({len(IDLE_EXTRA_SOURCE_INDICES)} source frames into unused cells)")
 
     return sheet
 
 
 def build_manifest() -> dict:
     """Build the pet.json manifest."""
+    idle_unique_frames = list(range(0, 8)) + IDLE_EXTRA_SHEET_SLOTS
     return {
         "id": "salary-cat",
         "displayName": "SalaryCat 月薪喵",
         "description": "The salary cat from SalaryCat — a kawaii cat that lives on your terminal, powered by Codex.",
-        "spritesheetPath": "spritesheet.webp",
+        "spritesheetPath": "spritesheet.png",
         "frame": {
             "width": FRAME_W,
             "height": FRAME_H,
@@ -163,8 +192,8 @@ def build_manifest() -> dict:
         },
         "animations": {
             "idle": {
-                "frames": [0, 1, 2, 3, 4, 5],
-                "fps": 8.0,
+                "frames": ping_pong_frames(idle_unique_frames),
+                "fps": 12.0,
                 "loop": True,
             },
             "move_right": {
@@ -195,8 +224,8 @@ def build_manifest() -> dict:
                 "loop": True,
             },
             "waiting": {
-                "frames": [48, 49, 50, 51, 52, 53],
-                "fps": 6.0,
+                "frames": [48, 49, 50, 51, 52, 53, 54, 55],
+                "fps": 12.0,
                 "loop": True,
             },
             "running": {
@@ -251,7 +280,7 @@ def main():
     print(f"\n{'=' * 60}")
     print("Deploy to Codex:")
     print(f"  mkdir -p {pet_dir}")
-    print(f"  cp output/spritesheet.webp {pet_dir}")
+    print(f"  cp output/spritesheet.png {pet_dir}")
     print(f"  cp output/pet.json {pet_dir}")
     print(f"\nThen in Codex CLI: /pets → select 'SalaryCat 月薪喵'")
 
